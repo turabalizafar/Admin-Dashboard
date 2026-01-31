@@ -124,17 +124,17 @@ const DeviceCard = ({ device, onDelete }) => {
         if (!date) return 'Never';
         const diff = (Date.now() - date.getTime()) / 1000;
 
-        // Format UTC time
-        const utcTime = date.toLocaleTimeString('en-US', {
-            timeZone: 'UTC',
+        // Format CST time
+        const cstTime = date.toLocaleTimeString('en-US', {
+            timeZone: 'America/Chicago',
             hour: '2-digit',
             minute: '2-digit',
             hour12: false
-        }) + ' UTC';
+        }) + ' CST';
 
-        if (diff < 60) return `Just now (${utcTime})`;
-        if (diff < 3600) return `${Math.floor(diff / 60)}m ago (${utcTime})`;
-        return utcTime;
+        if (diff < 60) return `Just now (${cstTime})`;
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago (${cstTime})`;
+        return cstTime;
     };
 
     const hasContent = device.current_playlist_id || device.current_media_id;
