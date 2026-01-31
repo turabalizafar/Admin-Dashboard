@@ -65,6 +65,34 @@ const AssignContentModal = ({ isOpen, onClose, contentItem, contentType }) => {
         }
     };
 
+    const handleUnassign = async (device) => {
+        setProcessingId(device.id);
+        try {
+            const updateData = {};
+            if (contentType === 'playlist') {
+                updateData.current_playlist_id = null;
+            } else {
+                updateData.current_media_id = null;
+            }
+
+            const { error } = await supabase
+                .from('devices')
+                .update(updateData)
+                .eq('id', device.id);
+
+            if (error) throw error;
+
+            // Optimistic update
+            setDevices(prev => prev.map(d =>
+                d.id === device.id ? { ...d, ...updateData } : d
+            ));
+        } catch (err) {
+            alert("Failed to unassign: " + err.message);
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -101,8 +129,8 @@ const AssignContentModal = ({ isOpen, onClose, contentItem, contentType }) => {
                                 <div
                                     key={device.id}
                                     className={`flex items-center justify-between p-4 rounded-xl border transition-all ${isAssigned
-                                            ? 'bg-blue-500/10 border-blue-500/50'
-                                            : 'bg-zinc-800/50 border-zinc-800 hover:border-zinc-700'
+                                        ? 'bg-blue-500/10 border-blue-500/50'
+                                        : 'bg-zinc-800/50 border-zinc-800 hover:border-zinc-700'
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">
@@ -118,9 +146,19 @@ const AssignContentModal = ({ isOpen, onClose, contentItem, contentType }) => {
                                     {processingId === device.id ? (
                                         <Loader2 className="animate-spin text-blue-500" size={20} />
                                     ) : isAssigned ? (
-                                        <div className="flex items-center gap-2 text-blue-400 text-sm font-medium">
-                                            <CheckCircle2 size={18} />
-                                            Active
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1 text-blue-400 text-sm font-medium">
+                                                <CheckCircle2 size={16} />
+                                                Active
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => handleUnassign(device)}
+                                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                            >
+                                                Unassign
+                                            </Button>
                                         </div>
                                     ) : (
                                         <Button

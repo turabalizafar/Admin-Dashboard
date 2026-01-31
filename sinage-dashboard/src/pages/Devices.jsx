@@ -17,6 +17,24 @@ const Devices = () => {
         orderBy: { column: 'created_at', ascending: false }
     });
 
+    const handleDelete = async (device) => {
+        const confirmMsg = `Are you sure you want to delete "${device.name}"? This will unregister the device and clear all its data. The TV app will need to be re-paired.`;
+
+        if (confirm(confirmMsg)) {
+            try {
+                const { error } = await supabase
+                    .from('devices')
+                    .delete()
+                    .eq('id', device.id);
+
+                if (error) throw error;
+            } catch (error) {
+                console.error(error);
+                alert("Failed to delete screen: " + error.message);
+            }
+        }
+    };
+
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
@@ -42,7 +60,7 @@ const Devices = () => {
             ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {devices.map((device) => (
-                        <DeviceCard key={device.id} device={device} />
+                        <DeviceCard key={device.id} device={device} onDelete={handleDelete} />
                     ))}
                 </div>
             )}

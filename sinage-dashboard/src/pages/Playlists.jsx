@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../components/ui/Button';
-import { Plus, ListVideo, Trash2, Monitor } from 'lucide-react';
+import { Plus, ListVideo, Trash2, Monitor, Edit2 } from 'lucide-react';
 import PlaylistEditor from '../components/playlists/PlaylistEditor';
 import { Card, CardContent } from '../components/ui/Card';
 import { supabase } from '../lib/supabase';
@@ -10,8 +10,15 @@ import AssignContentModal from '../components/devices/AssignContentModal';
 
 const Playlists = () => {
     const [isCreating, setIsCreating] = useState(false);
+    const [editingPlaylist, setEditingPlaylist] = useState(null);
     const [selectedPlaylist, setSelectedPlaylist] = useState(null);
     const { user } = useAuth();
+
+    // Fetch devices to show assignment info
+    const { data: devices } = useSupabaseRealtime({
+        table: 'devices',
+        filter: user ? `assigned_user_id=eq.${user.id}` : null,
+    });
 
     const { data: playlists, loading } = useSupabaseRealtime({
         table: 'playlists',
@@ -19,18 +26,39 @@ const Playlists = () => {
         orderBy: { column: 'created_at', ascending: false }
     });
 
-    const handleSave = async (playlistData) => {
-        try {
-            const { error } = await supabase
-                .from('playlists')
-                .insert([{
-                    ...playlistData,
-                    created_by: user.id,
-                    status: 'active'
-                }]);
+    // Get screens that have a specific playlist assigned
+    const getAssignedScreens = (playlistId) => {
+        return devices.filter(d => d.current_playlist_id === playlistId);
+    };
 
-            if (error) throw error;
+    const handleSave = async (playlistData, isEditing = false) => {
+        try {
+            if (isEditing && playlistData.id) {
+                // Update existing playlist
+                const { error } = await supabase
+                    .from('playlists')
+                    .update({
+                        name: playlistData.name,
+                        items: playlistData.items,
+                        total_duration: playlistData.total_duration,
+                    })
+                    .eq('id', playlistData.id);
+
+                if (error) throw error;
+            } else {
+                // Create new playlist
+                const { error } = await supabase
+                    .from('playlists')
+                    .insert([{
+                        ...playlistData,
+                        created_by: user.id,
+                        status: 'active'
+                    }]);
+
+                if (error) throw error;
+            }
             setIsCreating(false);
+            setEditingPlaylist(null);
         } catch (error) {
             console.error("Error saving playlist:", error);
             throw error;
@@ -38,7 +66,12 @@ const Playlists = () => {
     };
 
     const handleDelete = async (id) => {
-        if (confirm("Delete this playlist? This will stop playback on any screens using it.")) {
+        const assignedScreens = getAssignedScreens(id);
+        const warningMsg = assignedScreens.length > 0
+            ? `This playlist is assigned to ${assignedScreens.length} screen(s): ${assignedScreens.map(s => s.name).join(', ')}. Delete anyway?`
+            : "Delete this playlist? This will stop playback on any screens using it.";
+
+        if (confirm(warningMsg)) {
             try {
                 const { error } = await supabase
                     .from('playlists')
@@ -52,11 +85,18 @@ const Playlists = () => {
         }
     };
 
-    if (isCreating) {
+    // Show editor when creating or editing
+    if (isCreating || editingPlaylist) {
         return (
             <div className="space-y-6">
-                <h2 className="text-3xl font-bold tracking-tight">New Playlist</h2>
-                <PlaylistEditor onSave={handleSave} onCancel={() => setIsCreating(false)} />
+                <h2 className="text-3xl font-bold tracking-tight">
+                    {editingPlaylist ? 'Edit Playlist' : 'New Playlist'}
+                </h2>
+                <PlaylistEditor
+                    onSave={handleSave}
+                    onCancel={() => { setIsCreating(false); setEditingPlaylist(null); }}
+                    playlist={editingPlaylist}
+                />
             </div>
         );
     }
@@ -93,9 +133,21 @@ const Playlists = () => {
                                     <p className="text-sm text-zinc-500">
                                         {playlist.items ? playlist.items.length : 0} clips • {playlist.total_duration}s loop
                                     </p>
+                                    {getAssignedScreens(playlist.id).length > 0 && (
+                                        <p className="text-xs text-blue-400 mt-1">
+                                            Assigned to {getAssignedScreens(playlist.id).length} screen(s)
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setEditingPlaylist(playlist); }}
+                                        className="p-2 text-zinc-500 hover:text-emerald-500 transition-colors bg-zinc-800/50 rounded-lg"
+                                        title="Edit Playlist"
+                                    >
+                                        <Edit2 size={18} />
+                                    </button>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setSelectedPlaylist(playlist); }}
                                         className="p-2 text-zinc-500 hover:text-blue-500 transition-colors bg-zinc-800/50 rounded-lg"

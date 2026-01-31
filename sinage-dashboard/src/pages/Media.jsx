@@ -11,6 +11,12 @@ const Media = () => {
     const [selectedItem, setSelectedItem] = useState(null);
     const { user } = useAuth();
 
+    // Fetch devices to show assignment info
+    const { data: devices } = useSupabaseRealtime({
+        table: 'devices',
+        filter: user ? `assigned_user_id=eq.${user.id}` : null,
+    });
+
     const { data: items, loading } = useSupabaseRealtime({
         table: 'media',
         filter: user ? `uploaded_by=eq.${user.id}` : null,
@@ -22,8 +28,20 @@ const Media = () => {
         console.log("Uploaded:", newItem);
     };
 
+    // Get screens that have this media assigned
+    const getAssignedScreens = (mediaId) => {
+        return devices.filter(d => d.current_media_id === mediaId);
+    };
+
     const handleDelete = async (item) => {
-        if (confirm(`Are you sure you want to delete ${item.name}?`)) {
+        const assignedScreens = getAssignedScreens(item.id);
+        let confirmMsg = `Are you sure you want to delete ${item.name}?`;
+
+        if (assignedScreens.length > 0) {
+            confirmMsg = `This media is assigned to ${assignedScreens.length} screen(s): ${assignedScreens.map(s => s.name).join(', ')}. Delete anyway?`;
+        }
+
+        if (confirm(confirmMsg)) {
             try {
                 // 1. Delete from Supabase Storage
                 if (item.storage_path) {
@@ -87,6 +105,7 @@ const Media = () => {
                         items={filteredItems}
                         onDelete={handleDelete}
                         onAssign={(item) => setSelectedItem(item)}
+                        devices={devices}
                     />
                 )}
             </div>

@@ -5,13 +5,30 @@ import { Plus, X, MoveUp, MoveDown, Save, PlayCircle, Loader2 } from 'lucide-rea
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
-const PlaylistEditor = ({ onSave, onCancel }) => {
+const PlaylistEditor = ({ onSave, onCancel, playlist }) => {
     const { user } = useAuth();
     const [name, setName] = useState('');
     const [playlistItems, setPlaylistItems] = useState([]);
     const [availableMedia, setAvailableMedia] = useState([]);
     const [loadingMedia, setLoadingMedia] = useState(true);
     const [saving, setSaving] = useState(false);
+    
+    const isEditing = !!playlist;
+
+    // Pre-populate data when editing
+    useEffect(() => {
+        if (playlist) {
+            setName(playlist.name || '');
+            // Convert playlist items to editor format
+            const existingItems = (playlist.items || []).map((item, idx) => ({
+                ...item,
+                id: item.mediaId || item.id,
+                playlistItemId: Date.now() + idx, // Unique ID for each instance
+                duration: item.duration || 10
+            }));
+            setPlaylistItems(existingItems);
+        }
+    }, [playlist]);
 
     // Fetch Available Media from Supabase
     useEffect(() => {
@@ -73,10 +90,10 @@ const PlaylistEditor = ({ onSave, onCancel }) => {
 
         setSaving(true);
         try {
-            await onSave({
+            const playlistData = {
                 name,
                 items: playlistItems.map(item => ({
-                    mediaId: item.id,
+                    mediaId: item.id || item.mediaId,
                     name: item.name,
                     type: item.type,
                     url: item.url,
@@ -84,7 +101,14 @@ const PlaylistEditor = ({ onSave, onCancel }) => {
                     storage_path: item.storage_path || ''
                 })),
                 total_duration: playlistItems.reduce((acc, curr) => acc + curr.duration, 0),
-            });
+            };
+            
+            // Include id if editing
+            if (isEditing && playlist.id) {
+                playlistData.id = playlist.id;
+            }
+            
+            await onSave(playlistData, isEditing);
         } catch (error) {
             alert("Failed to save: " + error.message);
         } finally {

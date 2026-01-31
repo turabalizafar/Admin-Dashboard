@@ -2,7 +2,7 @@ import React from 'react';
 import { PlayCircle, Image as ImageIcon, Trash2, Monitor } from 'lucide-react';
 import { Card, CardContent } from '../ui/Card';
 
-const MediaItem = ({ item, onDelete, onAssign }) => {
+const MediaItem = ({ item, onDelete, onAssign, assignedCount }) => {
     return (
         <Card className="group overflow-hidden border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 transition-all">
             <div className="aspect-video relative bg-black/40 flex items-center justify-center overflow-hidden">
@@ -48,6 +48,14 @@ const MediaItem = ({ item, onDelete, onAssign }) => {
                     {item.type === 'video' ? <PlayCircle size={12} /> : <ImageIcon size={12} />}
                     <span className="capitalize">{item.type}</span>
                 </div>
+
+                {/* Assigned Badge */}
+                {assignedCount > 0 && (
+                    <div className="absolute top-2 right-2 px-2 py-1 bg-blue-500/80 backdrop-blur-md rounded-md text-xs font-medium text-white flex items-center gap-1">
+                        <Monitor size={12} />
+                        <span>{assignedCount} screen{assignedCount > 1 ? 's' : ''}</span>
+                    </div>
+                )}
             </div>
 
             <CardContent className="p-4">
@@ -61,7 +69,12 @@ const MediaItem = ({ item, onDelete, onAssign }) => {
     );
 };
 
-const MediaGrid = ({ items, onDelete, onAssign }) => {
+const MediaGrid = ({ items, onDelete, onAssign, devices = [] }) => {
+    // Get count of screens that have this media assigned
+    const getAssignedCount = (mediaId) => {
+        return devices.filter(d => d.current_media_id === mediaId).length;
+    };
+
     if (items.length === 0) {
         return (
             <div className="text-center py-10 text-zinc-500">
@@ -73,7 +86,13 @@ const MediaGrid = ({ items, onDelete, onAssign }) => {
     return (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {items.map((item) => (
-                <MediaItem key={item.id} item={item} onDelete={onDelete} onAssign={onAssign} />
+                <MediaItem
+                    key={item.id}
+                    item={item}
+                    onDelete={onDelete}
+                    onAssign={onAssign}
+                    assignedCount={getAssignedCount(item.id)}
+                />
             ))}
         </div>
     );
