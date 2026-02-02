@@ -69,6 +69,7 @@ export const useSupabaseRealtime = ({ table, select = '*', filter = null, orderB
         const channel = supabase
             .channel(channelName)
             .on('postgres_changes', filterConfig, (payload) => {
+                console.log(`[Realtime] ${table} event:`, payload);
                 const { eventType, new: newItem, old: oldItem } = payload;
 
                 if (eventType === 'INSERT') {
@@ -76,10 +77,12 @@ export const useSupabaseRealtime = ({ table, select = '*', filter = null, orderB
                 } else if (eventType === 'UPDATE') {
                     setData(prev => prev.map(item => item.id === newItem.id ? newItem : item));
                 } else if (eventType === 'DELETE') {
-                    setData(prev => prev.filter(item => item.id === oldItem.id));
+                    setData(prev => prev.filter(item => item.id !== oldItem.id));
                 }
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log(`[Realtime] ${table} subscription status:`, status);
+            });
 
         return () => {
             supabase.removeChannel(channel);
