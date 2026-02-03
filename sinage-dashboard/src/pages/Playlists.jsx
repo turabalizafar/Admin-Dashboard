@@ -103,12 +103,12 @@ const Playlists = () => {
 
     return (
         <div className="space-y-8">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Playlists</h2>
-                    <p className="text-zinc-400">Create sequences of content for your screens.</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Playlists</h2>
+                    <p className="text-zinc-400 text-sm sm:text-base">Create sequences of content for your screens.</p>
                 </div>
-                <Button onClick={() => setIsCreating(true)}>
+                <Button onClick={() => setIsCreating(true)} className="w-full sm:w-auto">
                     <Plus className="mr-2 h-4 w-4" /> Create Playlist
                 </Button>
             </div>
@@ -123,7 +123,7 @@ const Playlists = () => {
                 <div className="grid gap-4">
                     {playlists.map((playlist) => (
                         <Card key={playlist.id} className="bg-zinc-900/50 hover:border-blue-500/50 transition-colors cursor-pointer group">
-                            <CardContent className="p-6 flex items-center gap-6">
+                            <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
                                 <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
                                     <ListVideo size={24} />
                                 </div>
@@ -140,7 +140,7 @@ const Playlists = () => {
                                     )}
                                 </div>
 
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setEditingPlaylist(playlist); }}
                                         className="p-2 text-zinc-500 hover:text-emerald-500 transition-colors bg-zinc-800/50 rounded-lg"

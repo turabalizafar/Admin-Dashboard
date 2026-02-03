@@ -73,8 +73,8 @@ const Dashboard = () => {
     return (
         <div className="space-y-8">
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-                <p className="text-zinc-400">Overview of your digital signage network.</p>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h2>
+                <p className="text-zinc-400 text-sm sm:text-base">Overview of your digital signage network.</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -104,8 +104,8 @@ const Dashboard = () => {
                 />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4 bg-zinc-900/50 border-zinc-800">
+            <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">
+                <Card className="lg:col-span-4 bg-zinc-900/50 border-zinc-800">
                     <CardHeader>
                         <CardTitle>Recent Activity</CardTitle>
                     </CardHeader>
@@ -135,7 +135,7 @@ const Dashboard = () => {
                     </CardContent>
                 </Card>
 
-                <Card className="col-span-3 bg-zinc-900/50 border-zinc-800">
+                <Card className="lg:col-span-3 bg-zinc-900/50 border-zinc-800">
                     <CardHeader>
                         <CardTitle>Quick Actions</CardTitle>
                     </CardHeader>
