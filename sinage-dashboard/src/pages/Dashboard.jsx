@@ -18,8 +18,11 @@ const StatCard = ({ title, value, icon: Icon, description }) => (
     </Card>
 );
 
+import { useSupabasePresence } from '../hooks/useSupabasePresence';
+
 const Dashboard = () => {
     const { user } = useAuth();
+    const onlineDeviceIds = useSupabasePresence();
 
     // 1. Devices Live Data
     const { data: devices, loading: devicesLoading } = useSupabaseRealtime({
@@ -28,6 +31,7 @@ const Dashboard = () => {
         enabled: !!user // Only fetch if user is available
     });
 
+    // ... (media and playlists fetching)
     // 2. Media Live Data
     const { data: media, loading: mediaLoading } = useSupabaseRealtime({
         table: 'media',
@@ -48,14 +52,26 @@ const Dashboard = () => {
     const safeMedia = media || [];
     const safePlaylists = playlists || [];
 
+    const [timeValue, setTimeValue] = useState(Date.now());
+
+    // Force re-calculation of relative times every 30 seconds
+    useEffect(() => {
+        const interval = setInterval(() => setTimeValue(Date.now()), 30000);
+        return () => clearInterval(interval);
+    }, []);
+
     const loading = devicesLoading || mediaLoading || playlistsLoading;
 
     // Calculate Stats
     const stats = {
         totalScreens: safeDevices.length,
         onlineScreens: safeDevices.filter(d => {
+            // Priority 1: Instant Presence
+            if (onlineDeviceIds.has(d.id)) return true;
+
+            // Priority 2: Heartbeat Fallback (e.g., if socket jiggled but app is actually still on)
             const lastPing = d.last_ping ? new Date(d.last_ping) : null;
-            const isTimedOut = lastPing ? (Date.now() - lastPing.getTime() > 5 * 60 * 1000) : true;
+            const isTimedOut = lastPing ? (Date.now() - lastPing.getTime() > 2 * 60 * 1000) : true;
             return d.status === 'online' && !isTimedOut;
         }).length,
         totalMedia: safeMedia.length,

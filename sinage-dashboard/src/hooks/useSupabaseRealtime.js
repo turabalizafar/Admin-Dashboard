@@ -68,12 +68,44 @@ export const useSupabaseRealtime = ({ table, select = '*', filter = null, orderB
 
         const channel = supabase
             .channel(channelName)
-            .on('postgres_changes', filterConfig, (payload) => {
-                console.log(`[Realtime] ${table} event:`, payload);
+            .on('postgres_changes', { event: '*', schema: 'public', table: table }, (payload) => {
                 const { eventType, new: newItem, old: oldItem } = payload;
 
+                // Client-side filtering check
+                if (filter) {
+                    const [column, rest] = filter.split('=');
+                    const [, value] = rest.split('.');
+                    
+                    if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                        if (String(newItem[column]) !== String(value)) {
+                            // If the item no longer matches the filter, treat as DELETE
+                            if (eventType === 'UPDATE') {
+                                setData(prev => prev.filter(item => item.id !== newItem.id));
+                            }
+                            return;
+                        }
+                    }
+                }
+
+                console.log(`[Realtime] ${table} event applied:`, payload);
+
                 if (eventType === 'INSERT') {
-                    setData(prev => [newItem, ...prev]);
+                    setData(prev => {
+                        // Avoid duplicates if fetch already caught it
+                        if (prev.some(i => i.id === newItem.id)) return prev;
+                        
+                        const newData = [newItem, ...prev];
+                        // Apply ordering if needed
+                        if (orderBy) {
+                            return newData.sort((a, b) => {
+                                const valA = a[orderBy.column];
+                                const valB = b[orderBy.column];
+                                if (orderBy.ascending) return valA > valB ? 1 : -1;
+                                return valA < valB ? 1 : -1;
+                            });
+                        }
+                        return newData;
+                    });
                 } else if (eventType === 'UPDATE') {
                     setData(prev => prev.map(item => item.id === newItem.id ? newItem : item));
                 } else if (eventType === 'DELETE') {
