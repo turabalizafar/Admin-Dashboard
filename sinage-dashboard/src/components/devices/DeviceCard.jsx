@@ -3,27 +3,27 @@ import { Card, CardContent } from '../ui/Card';
 import { Tv, Activity, Clock, Edit2, Check, X, Trash2, FileText, PlayCircle, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
-const DeviceStatus = ({ status, last_ping }) => {
-    // Basic offline detection: if last_ping > 5 mins ago, consider it offline
+const DeviceStatus = ({ last_ping }) => {
+    // Simple timeout detection: if last_ping > 1 second ago, consider it offline
     const [isTimedOut, setIsTimedOut] = useState(false);
 
     useEffect(() => {
         const checkStatus = () => {
             const lastPingDate = last_ping ? new Date(last_ping) : null;
             if (lastPingDate) {
-                const diff = (Date.now() - lastPingDate.getTime()) / 1000 / 60;
-                setIsTimedOut(diff > 5);
+                const diff = (Date.now() - lastPingDate.getTime()) / 1000; // seconds
+                setIsTimedOut(diff > 1); // 1 second threshold
             } else {
                 setIsTimedOut(true);
             }
         };
 
         checkStatus();
-        const interval = setInterval(checkStatus, 30000); // Check every 30s
+        const interval = setInterval(checkStatus, 1000); // Check every 1s
         return () => clearInterval(interval);
     }, [last_ping]);
 
-    const isOnline = status === 'online' && !isTimedOut;
+    const isOnline = !isTimedOut;
 
     return (
         <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${isOnline
@@ -153,7 +153,7 @@ const DeviceCard = ({ device, onDelete }) => {
                     >
                         <Tv size={24} />
                     </button>
-                    <DeviceStatus status={device.status} last_ping={device.last_ping} />
+                    <DeviceStatus last_ping={device.last_ping} />
                 </div>
 
                 {/* Content Details Popover */}
