@@ -18,8 +18,11 @@ const StatCard = ({ title, value, icon: Icon, description }) => (
     </Card>
 );
 
+import { useSupabasePresence } from '../hooks/useSupabasePresence';
+
 const Dashboard = () => {
     const { user } = useAuth();
+    const onlineDeviceIds = useSupabasePresence();
 
     // 1. Devices Live Data
     const { data: devices, loading: devicesLoading } = useSupabaseRealtime({
@@ -28,6 +31,7 @@ const Dashboard = () => {
         enabled: !!user // Only fetch if user is available
     });
 
+    // ... (media and playlists fetching)
     // 2. Media Live Data
     const { data: media, loading: mediaLoading } = useSupabaseRealtime({
         table: 'media',
@@ -48,14 +52,26 @@ const Dashboard = () => {
     const safeMedia = media || [];
     const safePlaylists = playlists || [];
 
+    const [timeValue, setTimeValue] = useState(Date.now());
+
+    // Force re-calculation of relative times every 30 seconds
+    useEffect(() => {
+        const interval = setInterval(() => setTimeValue(Date.now()), 30000);
+        return () => clearInterval(interval);
+    }, []);
+
     const loading = devicesLoading || mediaLoading || playlistsLoading;
 
     // Calculate Stats
     const stats = {
         totalScreens: safeDevices.length,
         onlineScreens: safeDevices.filter(d => {
+            // Priority 1: Instant Presence
+            if (onlineDeviceIds.has(d.id)) return true;
+
+            // Priority 2: Heartbeat Fallback (e.g., if socket jiggled but app is actually still on)
             const lastPing = d.last_ping ? new Date(d.last_ping) : null;
-            const isTimedOut = lastPing ? (Date.now() - lastPing.getTime() > 5 * 60 * 1000) : true;
+            const isTimedOut = lastPing ? (Date.now() - lastPing.getTime() > 2 * 60 * 1000) : true;
             return d.status === 'online' && !isTimedOut;
         }).length,
         totalMedia: safeMedia.length,
@@ -73,8 +89,8 @@ const Dashboard = () => {
     return (
         <div className="space-y-8">
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-                <p className="text-zinc-400">Overview of your digital signage network.</p>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h2>
+                <p className="text-zinc-400 text-sm sm:text-base">Overview of your digital signage network.</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -104,8 +120,8 @@ const Dashboard = () => {
                 />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4 bg-zinc-900/50 border-zinc-800">
+            <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">
+                <Card className="lg:col-span-4 bg-zinc-900/50 border-zinc-800">
                     <CardHeader>
                         <CardTitle>Recent Activity</CardTitle>
                     </CardHeader>
@@ -135,7 +151,7 @@ const Dashboard = () => {
                     </CardContent>
                 </Card>
 
-                <Card className="col-span-3 bg-zinc-900/50 border-zinc-800">
+                <Card className="lg:col-span-3 bg-zinc-900/50 border-zinc-800">
                     <CardHeader>
                         <CardTitle>Quick Actions</CardTitle>
                     </CardHeader>

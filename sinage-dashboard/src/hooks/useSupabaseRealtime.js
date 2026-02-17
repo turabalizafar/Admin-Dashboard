@@ -66,18 +66,58 @@ export const useSupabaseRealtime = ({ table, select = '*', filter = null, orderB
             filterConfig.filter = filter;
         }
 
+        const handleRealtimeItem = (item, type) => {
+            // Client-side filtering check
+            if (filter) {
+                const [column, rest] = filter.split('=');
+                const [, value] = rest.split('.');
+
+                if (String(item[column]) !== String(value)) {
+                    // If the item doesn't match the filter, treat as DELETE for current state
+                    setData(prev => prev.filter(i => i.id !== item.id));
+                    return;
+                }
+            }
+
+            if (type === 'INSERT' || type === 'UPDATE') {
+                setData(prev => {
+                    const isExisting = prev.some(i => i.id === item.id);
+                    let newData;
+
+                    if (isExisting) {
+                        // Update existing
+                        newData = prev.map(i => i.id === item.id ? item : i);
+                    } else {
+                        // Add new
+                        newData = [item, ...prev];
+                    }
+
+                    // Apply ordering if needed
+                    if (orderBy) {
+                        return [...newData].sort((a, b) => {
+                            const valA = a[orderBy.column];
+                            const valB = b[orderBy.column];
+                            if (orderBy.ascending) return valA > valB ? 1 : -1;
+                            return valA < valB ? 1 : -1;
+                        });
+                    }
+                    return newData;
+                });
+            } else if (type === 'DELETE') {
+                setData(prev => prev.filter(i => i.id !== item.id));
+            }
+        };
+
         const channel = supabase
             .channel(channelName)
-            .on('postgres_changes', filterConfig, (payload) => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: table }, (payload) => {
                 console.log(`[Realtime] ${table} event:`, payload);
                 const { eventType, new: newItem, old: oldItem } = payload;
 
-                if (eventType === 'INSERT') {
-                    setData(prev => [newItem, ...prev]);
-                } else if (eventType === 'UPDATE') {
-                    setData(prev => prev.map(item => item.id === newItem.id ? newItem : item));
-                } else if (eventType === 'DELETE') {
-                    setData(prev => prev.filter(item => item.id !== oldItem.id));
+                if (eventType === 'DELETE') {
+                    handleRealtimeItem(oldItem, 'DELETE');
+                } else {
+                    handleRealtimeItem(newItem, eventType);
                 }
             })
             .subscribe((status) => {

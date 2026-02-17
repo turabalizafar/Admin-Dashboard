@@ -12,7 +12,7 @@ const PlaylistEditor = ({ onSave, onCancel, playlist }) => {
     const [availableMedia, setAvailableMedia] = useState([]);
     const [loadingMedia, setLoadingMedia] = useState(true);
     const [saving, setSaving] = useState(false);
-    
+
     const isEditing = !!playlist;
 
     // Pre-populate data when editing
@@ -102,12 +102,12 @@ const PlaylistEditor = ({ onSave, onCancel, playlist }) => {
                 })),
                 total_duration: playlistItems.reduce((acc, curr) => acc + curr.duration, 0),
             };
-            
+
             // Include id if editing
             if (isEditing && playlist.id) {
                 playlistData.id = playlist.id;
             }
-            
+
             await onSave(playlistData, isEditing);
         } catch (error) {
             alert("Failed to save: " + error.message);
@@ -117,9 +117,9 @@ const PlaylistEditor = ({ onSave, onCancel, playlist }) => {
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-140px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8 min-h-[calc(100vh-180px)] lg:h-[calc(100vh-140px)]">
             {/* LEFT: Available Media */}
-            <Card className="flex flex-col h-full bg-zinc-900/50">
+            <Card className="flex flex-col h-[300px] lg:h-full bg-zinc-900/50">
                 <div className="p-4 border-b border-zinc-800">
                     <h3 className="font-semibold text-lg">Media Library</h3>
                     <p className="text-xs text-zinc-400">Click + to add to timeline</p>
@@ -155,8 +155,8 @@ const PlaylistEditor = ({ onSave, onCancel, playlist }) => {
             </Card>
 
             {/* RIGHT: Playlist Timeline */}
-            <Card className="flex flex-col h-full bg-zinc-900/50 border-blue-500/20">
-                <div className="p-4 border-b border-zinc-800 flex items-center gap-4">
+            <Card className="flex flex-col h-[400px] lg:h-full bg-zinc-900/50 border-blue-500/20">
+                <div className="p-4 border-b border-zinc-800 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                     <div className="flex-1">
                         <input
                             type="text"

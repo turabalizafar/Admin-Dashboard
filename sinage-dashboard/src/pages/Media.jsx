@@ -76,14 +76,14 @@ const Media = () => {
     return (
         <div className="space-y-8">
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">Media Library</h2>
-                <p className="text-zinc-400">Upload images and videos for your signage content.</p>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Media Library</h2>
+                <p className="text-zinc-400 text-sm sm:text-base">Upload images and videos for your signage content.</p>
             </div>
 
             <UploadZone onUploadComplete={handleUpload} />
 
             <div className="space-y-4">
-                <div className="flex items-center gap-2 border-b border-zinc-800 pb-1">
+                <div className="flex items-center gap-1 sm:gap-2 border-b border-zinc-800 pb-1 overflow-x-auto">
                     {['all', 'image', 'video'].map(tab => (
                         <button
                             key={tab}

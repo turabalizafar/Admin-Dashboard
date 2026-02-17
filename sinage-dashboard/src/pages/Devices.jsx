@@ -37,12 +37,12 @@ const Devices = () => {
 
     return (
         <div className="space-y-8">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Screens</h2>
-                    <p className="text-zinc-400">Manage your paired digital signage screens.</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Screens</h2>
+                    <p className="text-zinc-400 text-sm sm:text-base">Manage your paired digital signage screens.</p>
                 </div>
-                <Button onClick={() => setIsModalOpen(true)}>
+                <Button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto">
                     <Plus className="mr-2 h-4 w-4" /> Claim Device
                 </Button>
             </div>
@@ -58,7 +58,7 @@ const Devices = () => {
                     </Button>
                 </div>
             ) : (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {devices.map((device) => (
                         <DeviceCard key={device.id} device={device} onDelete={handleDelete} />
                     ))}
