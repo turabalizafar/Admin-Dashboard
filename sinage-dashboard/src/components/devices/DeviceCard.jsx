@@ -7,7 +7,7 @@ import { useSupabasePresence } from '../../hooks/useSupabasePresence';
 const DeviceStatus = ({ deviceId, status, last_ping }) => {
     const onlineDeviceIds = useSupabasePresence();
 
-    // Check if device is online via Presence (Instant)
+    // Check if device is online via Presence (Instant - detects internet disconnect immediately)
     const isPresent = onlineDeviceIds.has(deviceId);
 
     // Heartbeat fallback (1 second window)
@@ -110,22 +110,47 @@ const DeviceCard = ({ device, onDelete }) => {
         }
     };
 
-    const formatLastSeen = (last_ping) => {
+    const formatLastSeen = (last_ping, deviceTimezone) => {
         const date = last_ping ? new Date(last_ping) : null;
         if (!date) return 'Never';
+
         const diff = (Date.now() - date.getTime()) / 1000;
 
-        // Format CST time
-        const cstTime = date.toLocaleTimeString('en-US', {
-            timeZone: 'America/Chicago',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        }) + ' CST';
+        // Format time in the device's timezone if available
+        let timeString;
+        let timezoneDisplay = deviceTimezone || 'Unknown TZ';
 
-        if (diff < 60) return `Just now (${cstTime})`;
-        if (diff < 3600) return `${Math.floor(diff / 60)}m ago (${cstTime})`;
-        return cstTime;
+        if (deviceTimezone) {
+            try {
+                // Format the time in the device's actual timezone
+                timeString = date.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                    timeZone: deviceTimezone
+                });
+                // Shorten timezone name for display (e.g., "America/New_York" -> "New York")
+                timezoneDisplay = deviceTimezone.split('/').pop().replace(/_/g, ' ');
+            } catch (e) {
+                // Fallback if timezone is invalid
+                timeString = date.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+            }
+        } else {
+            // No timezone info - use local time
+            timeString = date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        }
+
+        if (diff < 60) return `Just now (${timeString} ${timezoneDisplay})`;
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago (${timeString} ${timezoneDisplay})`;
+        return `${timeString} ${timezoneDisplay}`;
     };
 
     const hasContent = device.current_playlist_id || device.current_media_id;
@@ -253,7 +278,7 @@ const DeviceCard = ({ device, onDelete }) => {
                         <span className="text-zinc-500 flex items-center gap-2">
                             <Clock size={14} /> Last Seen
                         </span>
-                        <span className="text-zinc-300">{formatLastSeen(device.last_ping)}</span>
+                        <span className="text-zinc-300">{formatLastSeen(device.last_ping, device.timezone)}</span>
                     </div>
 
                     {onDelete && (
