@@ -63,6 +63,9 @@ const DeviceCard = ({ device, onDelete }) => {
                             itemCount: items.length,
                             items: items.slice(0, 5) // First 5 items for preview
                         });
+                    } else {
+                        // Playlist no longer exists
+                        setContentInfo(null);
                     }
                 } else if (device.current_media_id) {
                     // Fetch media details
@@ -79,6 +82,9 @@ const DeviceCard = ({ device, onDelete }) => {
                             mediaType: data.type,
                             url: data.url
                         });
+                    } else {
+                        // Media no longer exists
+                        setContentInfo(null);
                     }
                 }
             } catch (err) {
@@ -110,48 +116,31 @@ const DeviceCard = ({ device, onDelete }) => {
         }
     };
 
-    const formatLastSeen = (last_ping, deviceTimezone) => {
-        const date = last_ping ? new Date(last_ping) : null;
-        if (!date) return 'Never';
+    const formatLastSeen = (last_ping) => {
+        if (!last_ping) return 'Never';
 
-        const diff = (Date.now() - date.getTime()) / 1000;
+        // Parse the timestamp and extract time + offset
+        const timestamp = last_ping.toString().trim();
 
-        // Format time in the device's timezone if available
-        let timeString;
-        let timezoneDisplay = deviceTimezone || 'Unknown TZ';
+        // Extract the time part (HH:MM:SS)
+        const timeMatch = timestamp.match(/(\d{2}):(\d{2}):(\d{2})/);
+        if (!timeMatch) return 'Invalid time';
 
-        if (deviceTimezone) {
-            try {
-                // Format the time in the device's actual timezone
-                timeString = date.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false,
-                    timeZone: deviceTimezone
-                });
-                // Shorten timezone name for display (e.g., "America/New_York" -> "New York")
-                timezoneDisplay = deviceTimezone.split('/').pop().replace(/_/g, ' ');
-            } catch (e) {
-                // Fallback if timezone is invalid
-                timeString = date.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                });
-            }
-        } else {
-            // No timezone info - use local time
-            timeString = date.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
+        const hours = timeMatch[1];
+        const minutes = timeMatch[2];
+        const timeString = `${hours}:${minutes}`;
+
+        // Extract the offset (e.g., +00, +05:00)
+        let offset = 'GMT';
+        const offsetMatch = timestamp.match(/([+-]\d{2}):?(\d{2})?$/);
+        if (offsetMatch) {
+            const sign = offsetMatch[1].startsWith('+') ? '+' : '-';
+            const offsetHours = offsetMatch[1].replace(/[+-]/, '');
+            offset = `${sign}${offsetHours}:00`;
         }
 
-        if (diff < 60) return `Just now (${timeString} ${timezoneDisplay})`;
-        if (diff < 3600) return `${Math.floor(diff / 60)}m ago (${timeString} ${timezoneDisplay})`;
-        return `${timeString} ${timezoneDisplay}`;
-    };
+        return `${timeString} ${offset}`;
+    }
 
     const hasContent = device.current_playlist_id || device.current_media_id;
 
@@ -270,7 +259,9 @@ const DeviceCard = ({ device, onDelete }) => {
                             <Activity size={14} /> {device.current_media_id ? 'Direct Play' : 'Playlist'}
                         </span>
                         <span className={`max-w-[150px] truncate text-right ${contentInfo ? 'text-blue-400 font-medium' : 'text-zinc-400'}`}>
-                            {loadingContent ? '...' : (contentInfo?.name || (hasContent ? 'Loading...' : 'Idle'))}
+                            {loadingContent
+                                ? '...'
+                                : (contentInfo?.name || (hasContent ? 'No content assigned' : 'Idle'))}
                         </span>
                     </div>
 
@@ -278,7 +269,7 @@ const DeviceCard = ({ device, onDelete }) => {
                         <span className="text-zinc-500 flex items-center gap-2">
                             <Clock size={14} /> Last Seen
                         </span>
-                        <span className="text-zinc-300">{formatLastSeen(device.last_ping, device.timezone)}</span>
+                        <span className="text-zinc-300">{formatLastSeen(device.last_ping)}</span>
                     </div>
 
                     {onDelete && (
