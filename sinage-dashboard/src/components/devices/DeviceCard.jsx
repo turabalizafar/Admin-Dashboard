@@ -136,7 +136,7 @@ const DeviceCard = ({ device, onDelete }) => {
         if (offsetMatch) {
             const sign = offsetMatch[1].startsWith('+') ? '+' : '-';
             const offsetHours = offsetMatch[1].replace(/[+-]/, '');
-            offset = `${sign}${offsetHours}:00`;
+            offset = `GMT${sign}${offsetHours}:00`;
         }
 
         return `${timeString} ${offset}`;
