@@ -10,9 +10,9 @@ const DeviceStatus = ({ deviceId, status, last_ping }) => {
     // Check if device is online via Presence (Instant - detects internet disconnect immediately)
     const isPresent = onlineDeviceIds.has(deviceId);
 
-    // Heartbeat fallback (1 second window)
+    // Heartbeat fallback (45s window = 3× the 15s heartbeat interval to avoid false offline)
     const lastPingDate = last_ping ? new Date(last_ping) : null;
-    const isTimedOut = lastPingDate ? ((Date.now() - lastPingDate.getTime()) / 1000 > 1) : true;
+    const isTimedOut = lastPingDate ? ((Date.now() - lastPingDate.getTime()) / 1000 > 45) : true;
 
     const isOnline = isPresent || (status === 'online' && !isTimedOut);
 
@@ -119,28 +119,27 @@ const DeviceCard = ({ device, onDelete }) => {
     const formatLastSeen = (last_ping) => {
         if (!last_ping) return 'Never';
 
-        // Parse the timestamp and extract time + offset
-        const timestamp = last_ping.toString().trim();
+        // Parse the UTC timestamp — JS Date auto-converts to viewer's local time
+        const date = new Date(last_ping);
+        if (isNaN(date.getTime())) return 'Invalid time';
 
-        // Extract the time part (HH:MM:SS)
-        const timeMatch = timestamp.match(/(\d{2}):(\d{2}):(\d{2})/);
-        if (!timeMatch) return 'Invalid time';
+        // Date parts
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = months[date.getMonth()];
+        const day = date.getDate();
+        const year = date.getFullYear();
 
-        const hours = timeMatch[1];
-        const minutes = timeMatch[2];
-        const timeString = `${hours}:${minutes}`;
+        // Time parts
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
 
-        // Extract the offset (e.g., +00, +05:00)
-        let offset = 'GMT';
-        const offsetMatch = timestamp.match(/([+-]\d{2}):?(\d{2})?$/);
-        if (offsetMatch) {
-            const sign = offsetMatch[1].startsWith('+') ? '+' : '-';
-            const offsetHours = offsetMatch[1].replace(/[+-]/, '');
-            offset = `GMT${sign}${offsetHours}:00`;
-        }
+        // Viewer's timezone abbreviation (e.g. PKT, EST, GMT+5)
+        const tzAbbr = Intl.DateTimeFormat('en', { timeZoneName: 'short' })
+            .formatToParts(date)
+            .find(p => p.type === 'timeZoneName')?.value || 'Local';
 
-        return `${timeString} ${offset}`;
-    }
+        return `${month} ${day}, ${year} ${hours}:${minutes} ${tzAbbr}`;
+    };
 
     const hasContent = device.current_playlist_id || device.current_media_id;
 

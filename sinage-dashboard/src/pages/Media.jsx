@@ -46,7 +46,7 @@ const Media = () => {
                 // 1. Delete from Supabase Storage
                 if (item.storage_path) {
                     const { error: storageError } = await supabase.storage
-                        .from('Singnage OS')
+                        .from('media')
                         .remove([item.storage_path]);
 
                     if (storageError) {
