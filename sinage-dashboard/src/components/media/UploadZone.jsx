@@ -109,7 +109,6 @@ const UploadZone = ({ onUploadComplete }) => {
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                multiple
                 accept="image/*,video/*"
                 onChange={handleChange}
             />

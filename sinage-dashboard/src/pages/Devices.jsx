@@ -4,12 +4,14 @@ import { Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSupabaseRealtime } from '../hooks/useSupabaseRealtime';
+import { useSupabasePresence } from '../hooks/useSupabasePresence';
 import DeviceCard from '../components/devices/DeviceCard';
 import ClaimDeviceModal from '../components/devices/ClaimDeviceModal';
 
 const Devices = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { user } = useAuth();
+    const onlineDeviceIds = useSupabasePresence();
 
     const { data: devices, loading } = useSupabaseRealtime({
         table: 'devices',
@@ -60,7 +62,7 @@ const Devices = () => {
             ) : (
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {devices.map((device) => (
-                        <DeviceCard key={device.id} device={device} onDelete={handleDelete} />
+                        <DeviceCard key={device.id} device={device} onDelete={handleDelete} onlineDeviceIds={onlineDeviceIds} />
                     ))}
                 </div>
             )}

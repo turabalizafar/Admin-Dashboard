@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Tv, FileImage, ListVideo, LogOut, Menu, X } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Sidebar = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { logout } = useAuth();
 
     // Close sidebar on route change (mobile)
     useEffect(() => {
@@ -68,7 +70,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
                 <div className="p-4 border-t border-zinc-800">
                     <button
-                        onClick={() => navigate('/login')}
+                        onClick={async () => { await logout(); navigate('/login'); }}
                         className="flex items-center gap-3 w-full px-4 py-3 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
                     >
                         <LogOut size={20} />

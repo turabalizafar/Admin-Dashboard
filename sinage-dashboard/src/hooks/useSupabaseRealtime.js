@@ -127,7 +127,7 @@ export const useSupabaseRealtime = ({ table, select = '*', filter = null, orderB
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [table, filter, select, orderBy?.column, orderBy?.ascending]);
+    }, [table, filter, select, enabled, orderBy?.column, orderBy?.ascending]);
 
     return { data, loading, error, refetch: fetchData };
 };

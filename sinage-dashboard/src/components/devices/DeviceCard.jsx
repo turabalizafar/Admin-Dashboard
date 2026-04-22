@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '../ui/Card';
 import { Tv, Activity, Clock, Edit2, Check, X, Trash2, FileText, PlayCircle, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { useSupabasePresence } from '../../hooks/useSupabasePresence';
 
-const DeviceStatus = ({ deviceId, status, last_ping }) => {
-    const onlineDeviceIds = useSupabasePresence();
+const DeviceStatus = ({ deviceId, status, last_ping, onlineDeviceIds }) => {
+    // Use the onlineDeviceIds passed from parent (single subscription)
 
     // Check if device is online via Presence (Instant - detects internet disconnect immediately)
     const isPresent = onlineDeviceIds.has(deviceId);
@@ -27,7 +26,7 @@ const DeviceStatus = ({ deviceId, status, last_ping }) => {
     );
 };
 
-const DeviceCard = ({ device, onDelete }) => {
+const DeviceCard = ({ device, onDelete, onlineDeviceIds }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(device.name);
     const [saving, setSaving] = useState(false);
@@ -157,7 +156,7 @@ const DeviceCard = ({ device, onDelete }) => {
                     >
                         <Tv size={24} />
                     </button>
-                    <DeviceStatus deviceId={device.id} status={device.status} last_ping={device.last_ping} />
+                    <DeviceStatus deviceId={device.id} status={device.status} last_ping={device.last_ping} onlineDeviceIds={onlineDeviceIds} />
                 </div>
 
                 {/* Content Details Popover */}
